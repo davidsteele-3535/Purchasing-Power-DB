@@ -3,891 +3,593 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Purchasing Power – January 2026 Dashboard</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Purchasing Power – Call Dashboard v3</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
       --accent: #3b82f6;
-      --accent2: #22c55e;
-      --accent3: #f59e0b;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --success: #22c55e;
+      --warning: #eab308;
+      --border: #2d3a4d;
+      --radius: 10px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      line-height: 1.5;
     }
-    .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem 0;
-      color: var(--text);
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
-    .subtitle { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
-    .file-row {
+    .header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .header .load-area {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
     }
-    .file-row input[type="file"] {
+    .file-input-wrap {
+      position: relative;
+    }
+    .file-input-wrap input[type="file"] {
+      position: absolute;
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      z-index: -1;
+    }
+    .file-input-wrap label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
       padding: 0.5rem 1rem;
-      border: 2px solid var(--accent);
-      border-radius: 8px;
-      background: var(--card);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .file-row input[type="file"]::file-selector-button {
-      padding: 0.35rem 0.75rem;
-      margin-right: 0.75rem;
       background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 6px;
+      color: #fff;
+      border-radius: var(--radius);
       cursor: pointer;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 500;
     }
-    .file-row .hint { color: var(--muted); font-size: 0.875rem; }
-    .cards {
+    .file-input-wrap label:hover { filter: brightness(1.1); }
+    .file-name { color: var(--text-muted); font-size: 0.85rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .container { max-width: 1600px; margin: 0 auto; padding: 1.5rem; }
+    .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 1.25rem;
-      border: 1px solid rgba(255,255,255,0.06);
+    .kpi-section { margin-bottom: 1.5rem; }
+    .kpi-section-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
     }
-    .card .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
-    .card .value { font-size: 1.75rem; font-weight: 700; }
-    .card.highlight .value { color: var(--accent2); }
-    .card.highlight2 .value { color: var(--accent3); }
-    .card .pct { font-size: 0.9rem; color: var(--muted); margin-top: 0.25rem; }
-    .grid2 {
+    .kpi-card .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+    .kpi-card .value { font-size: 1.5rem; font-weight: 700; }
+    .kpi-card .sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .charts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 1.5rem;
+    }
+    @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      min-height: 320px;
+    }
+    .chart-card h3 { margin: 0 0 1rem; font-size: 1rem; font-weight: 600; color: var(--text); }
+    .chart-card.grid-column-full { grid-column: 1 / -1; }
+    .chart-wrap { position: relative; height: 280px; }
+    .chart-wrap-sm { height: 240px; }
+    .endstate-by-outcome { margin-bottom: 1.5rem; grid-column: 1 / -1; }
+    .endstate-by-outcome-title { font-size: 1rem; font-weight: 600; color: var(--text); margin: 0 0 0.75rem; }
+    .endstate-by-outcome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 1100px) { .endstate-by-outcome-grid { grid-template-columns: 1fr; } }
+    .overlap-1047a-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+    .overlap-1047a-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; }
+    .overlap-1047a-card .label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .overlap-1047a-card .value { font-size: 1.25rem; font-weight: 700; }
+    .wismo-summary { margin-bottom: 1rem; }
+    #wismoCard { min-height: 120px; }
+    .wismo-summary .kpi-card { display: inline-block; margin-right: 1rem; margin-bottom: 0.5rem; }
+    .wismo-path-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .wismo-path-table th, .wismo-path-table td { text-align: left; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .wismo-path-table th { color: var(--text-muted); font-weight: 600; }
+    .wismo-path-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
       margin-bottom: 1.5rem;
     }
-    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
-    .panel {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 1.25rem;
-      border: 1px solid rgba(255,255,255,0.06);
+    .empty-state p { margin: 0 0 1rem; }
+    .loading { color: var(--accent); }
+    .error { color: #ef4444; font-size: 0.9rem; margin-top: 0.5rem; }
+    .date-range-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-wrap: wrap;
     }
-    .panel h2 { font-size: 1.1rem; margin: 0 0 0.5rem 0; color: var(--text); }
-    .panel-hint { font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem 0; }
-    .day-avg { font-weight: 600; color: var(--text); font-size: 0.95rem; margin-bottom: 0.75rem !important; }
-    .pct.sr-breakout { font-size: 0.85rem; }
-    .table-wrap { margin-bottom: 1rem; max-height: 200px; overflow-y: auto; }
-    .deep-dive-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem; }
-    @media (max-width: 1100px) { .deep-dive-grid { grid-template-columns: 1fr; } }
-    .deep-dive-block { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.75rem; }
-    .deep-dive-block h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--accent); }
-    .deep-dive-block .table-wrap { max-height: 420px; }
-    .chart-wrap { position: relative; height: 320px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    th { color: var(--muted); font-weight: 600; }
-    .loading { color: var(--muted); padding: 2rem; text-align: center; }
-    .error { background: rgba(239,68,68,0.15); color: #fca5a5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-    .hidden { display: none; }
-    .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid var(--card); }
-    .tabs button { padding: 0.6rem 1.25rem; font-size: 0.95rem; font-weight: 600; color: var(--muted); background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; cursor: pointer; border-radius: 6px 6px 0 0; }
-    .tabs button:hover { color: var(--text); }
-    .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    .date-range-bar label { font-size: 0.85rem; color: var(--text-muted); }
+    .date-range-bar input[type="date"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Purchasing Power</h1>
-    <p class="subtitle">January 2026 – Call dashboard</p>
-
-    <div class="file-row">
-      <label for="csvFile">Load CSV:</label>
-      <input type="file" id="csvFile" accept=".csv" title="Click to choose Purchasing Power January 2026.csv" />
-      <span class="hint">Click the button above to choose <strong>Purchasing Power January 2026.csv</strong> (needed when opening this page from your computer).</span>
+  <header class="header">
+    <h1>Purchasing Power – Call Dashboard <span style="font-size:0.6em; font-weight:normal; opacity:0.8;">v3</span></h1>
+    <div class="load-area">
+      <div class="file-input-wrap">
+        <input type="file" id="csvFile" accept=".csv" />
+        <label for="csvFile">Load CSV</label>
+      </div>
+      <span class="file-name" id="fileName">No file selected</span>
     </div>
-
-    <div id="error" class="error hidden"></div>
-    <div id="loading" class="loading">Loading Purchasing Power January 2026.csv…</div>
-    <div id="dashboard" class="hidden">
-      <div class="tabs">
-        <button type="button" class="tab-btn active" data-tab="overview">Overview</button>
-        <button type="button" class="tab-btn" data-tab="insights">Additional Insights</button>
+  </header>
+  <main class="container">
+    <div id="emptyState" class="empty-state">
+      <p><strong id="versionBadge">Dashboard v3</strong> — Load <strong>Purchasing Power January 2026.csv</strong> (or any CSV with the same columns) to view the dashboard.</p>
+      <p class="error" id="loadError"></p>
+    </div>
+    <div id="dashboard" style="display: none;">
+      <div class="date-range-bar">
+        <label for="dateFrom">From</label>
+        <input type="date" id="dateFrom" />
+        <label for="dateTo">To</label>
+        <input type="date" id="dateTo" />
       </div>
-
-      <div id="tab-overview" class="tab-panel active">
-      <div class="cards">
-        <div class="card">
-          <div class="label">Total calls</div>
-          <div class="value" id="totalCalls">0</div>
-        </div>
-        <div class="card highlight">
-          <div class="label">Finish</div>
-          <div class="value" id="finishCount">0</div>
-          <div class="pct" id="finishPct">0%</div>
-        </div>
-        <div class="card highlight2">
-          <div class="label">Finish transfer</div>
-          <div class="value" id="finishTransferCount">0</div>
-          <div class="pct" id="finishTransferPct">0%</div>
-        </div>
-        <div class="card highlight2">
-          <div class="label">Bizrule transfer</div>
-          <div class="value" id="bizruleTransferCount">0</div>
-          <div class="pct" id="bizruleTransferPct">0%</div>
-        </div>
-        <div class="card">
-          <div class="label">Finish + Finish transfer</div>
-          <div class="value" id="combinedCount">0</div>
-          <div class="pct" id="combinedPct">0%</div>
-        </div>
-        <div class="card highlight">
-          <div class="label">Authenticated (1005a)</div>
-          <div class="value" id="authCount">0</div>
-          <div class="pct" id="authPct">0%</div>
-        </div>
-        <div class="card">
-          <div class="label">Supervisor Requested</div>
-          <div class="value" id="srTotal">0</div>
-          <div class="pct sr-breakout"><span id="srAuth">0</span> auth · <span id="srNonAuth">0</span> non-auth</div>
-        </div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="kpi-section">
+        <div class="kpi-section-title">Authentication (breadcrumb 1005a)</div>
+        <div class="kpi-grid" id="authKpiGrid"></div>
       </div>
-
-      <div class="grid2">
-        <div class="panel">
-          <h2>Calls by day of week</h2>
-          <p id="dayAvgWrap" class="panel-hint day-avg"></p>
-          <div class="chart-wrap">
-            <canvas id="dayChart"></canvas>
-          </div>
-          <div id="dayTableWrap"></div>
-        </div>
-        <div class="panel">
-          <h2>Caller intent (authenticated with 1005a)</h2>
-          <p class="panel-hint">Pie shows authenticated callers with one of: WisMO, Account Balance, Spending Limit, Change Contact Info, Returns, Password Reset, Treadsy, Past Due.</p>
-          <div class="chart-wrap">
-            <canvas id="intentChart"></canvas>
+      <div class="charts-grid">
+        <div class="chart-card"><h3>Outcome distribution</h3><div class="chart-wrap"><canvas id="chartOutcome"></canvas></div></div>
+        <div class="chart-card"><h3>Calls by date</h3><div class="chart-wrap"><canvas id="chartByDate"></canvas></div></div>
+        <div class="endstate-by-outcome">
+          <h3 class="endstate-by-outcome-title">Top 10 end states by outcome</h3>
+          <div class="endstate-by-outcome-grid">
+            <div class="chart-card"><h3>Finish — Top 10 end states</h3><div class="chart-wrap chart-wrap-sm"><canvas id="chartEndStateFinish"></canvas></div></div>
+            <div class="chart-card"><h3>FinishXfer — Top 10 end states</h3><div class="chart-wrap chart-wrap-sm"><canvas id="chartEndStateFinishXfer"></canvas></div></div>
+            <div class="chart-card"><h3>BizRuleXfer — Top 10 end states</h3><div class="chart-wrap chart-wrap-sm"><canvas id="chartEndStateBizruleXfer"></canvas></div></div>
           </div>
         </div>
-      </div>
-
-      <div class="panel" style="margin-top: 1rem;">
-        <h2>End state deep dive: Finish, FinishXfer, BizruleXfer</h2>
-        <p class="panel-hint">Top 10 end states per outcome. Percentages: within that outcome and of total calls.</p>
-        <div class="deep-dive-grid">
-          <div class="deep-dive-block">
-            <h3>Finish (top 10)</h3>
-            <div id="endStateFinishWrap" class="table-wrap"></div>
-          </div>
-          <div class="deep-dive-block">
-            <h3>FinishXfer (top 10)</h3>
-            <div id="endStateFinishXferWrap" class="table-wrap"></div>
-          </div>
-          <div class="deep-dive-block">
-            <h3>BizruleXfer (top 10)</h3>
-            <div id="endStateBizruleXferWrap" class="table-wrap"></div>
-          </div>
+        <div class="chart-card grid-column-full" id="wismoCard">
+          <h3>WisMO calls — Entry and paths</h3>
+          <div class="wismo-summary" id="wismoSummary"></div>
+          <div id="wismoPathTableWrap"></div>
         </div>
-      </div>
-
-      <div class="panel" style="margin-top: 1rem;">
-        <h2>Supervisor Requested with 1047a – intent breakout</h2>
-        <p class="panel-hint">Calls with End State "Supervisor Requested" and breadcrumb 1047a, broken out by intent. No matching intent = No intent captured.</p>
-        <div id="sr1047aTableWrap" class="table-wrap"></div>
-        <div class="chart-wrap" style="height: 280px;">
-          <canvas id="sr1047aChart"></canvas>
+        <div class="chart-card"><h3>Caller intent (breadcrumb)</h3><div class="chart-wrap"><canvas id="chartIntent"></canvas></div></div>
+        <div class="chart-card"><h3>VA duration (minutes) distribution</h3><div class="chart-wrap"><canvas id="chartDuration"></canvas></div></div>
+        <div class="chart-card grid-column-full">
+          <h3>Callers who reached 1047a and also had intent</h3>
+          <div class="overlap-1047a-grid" id="overlap1047aGrid"></div>
         </div>
-      </div>
-      </div>
-
-      <div id="tab-insights" class="tab-panel">
-        <div class="grid2" style="margin-bottom: 1.5rem;">
-          <div class="panel">
-            <h2>All outcomes distribution</h2>
-            <p class="panel-hint">Every outcome type in the data (Finish, Hangup, etc.).</p>
-            <div class="chart-wrap">
-              <canvas id="insightsOutcomeChart"></canvas>
-            </div>
-          </div>
-          <div class="panel">
-            <h2>Authentication rate by day of week</h2>
-            <p class="panel-hint">% of calls that were authenticated (1005a) on each weekday.</p>
-            <div class="chart-wrap">
-              <canvas id="insightsAuthByDayChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="grid2" style="margin-bottom: 1.5rem;">
-          <div class="panel">
-            <h2>Top employers by call volume</h2>
-            <p class="panel-hint">Employers with the most calls (top 15).</p>
-            <div id="insightsEmployerWrap" class="table-wrap" style="max-height: 320px;"></div>
-          </div>
-          <div class="panel">
-            <h2>Top end states (all calls)</h2>
-            <p class="panel-hint">Most common end states across all outcomes.</p>
-            <div id="insightsEndStateWrap" class="table-wrap" style="max-height: 320px;"></div>
-          </div>
-        </div>
-        <div class="panel" style="margin-bottom: 1.5rem;">
-          <h2>After hours</h2>
-          <p class="panel-hint">Calls with an end state containing "After hours".</p>
-          <div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 1rem;">
-            <div class="card">
-              <div class="label">After hours calls</div>
-              <div class="value" id="insightsAfterHoursCount">0</div>
-              <div class="pct" id="insightsAfterHoursPct">0% of total</div>
-            </div>
-          </div>
-          <div class="grid2">
-            <div>
-              <h3 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; color: var(--muted);">Outcomes (after hours only)</h3>
-              <div id="insightsAfterHoursOutcomeWrap" class="table-wrap" style="max-height: 260px;"></div>
-            </div>
-            <div>
-              <h3 style="font-size: 0.95rem; margin: 0 0 0.5rem 0; color: var(--muted);">End states (after hours only)</h3>
-              <div id="insightsAfterHoursEndStateWrap" class="table-wrap" style="max-height: 260px;"></div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Summary stats</h2>
-          <div id="insightsSummaryWrap" class="table-wrap"></div>
-        </div>
+        <div class="chart-card"><h3>Top employers by call volume (top 10)</h3><div class="chart-wrap"><canvas id="chartEmployer"></canvas></div></div>
       </div>
     </div>
-  </div>
-
+  </main>
   <script>
-    const CSV_URL = 'Purchasing Power January 2026.csv';
-    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    (function () {
+      const csvFile = document.getElementById('csvFile');
+      const fileName = document.getElementById('fileName');
+      const emptyState = document.getElementById('emptyState');
+      const dashboard = document.getElementById('dashboard');
+      const loadError = document.getElementById('loadError');
+      const kpiGrid = document.getElementById('kpiGrid');
+      const dateFrom = document.getElementById('dateFrom');
+      const dateTo = document.getElementById('dateTo');
 
-    const INTENT_BREADCRUMBS = [
-      { code: '1011c', name: 'WisMO' },
-      { code: '1024a', name: 'Account Balance' },
-      { code: '1024b', name: 'Spending Limit' },
-      { code: '1011f', name: 'Change Contact Info' },
-      { code: '1011b', name: 'Returns' },
-      { code: '1011d', name: 'Password Reset' },
-      { code: '1011t', name: 'Treadsy' },
-      { code: '1007b', name: 'Past Due' }
-    ];
-    const AUTH_BREADCRUMB = '1005a';
-    const SR_1047A_BREADCRUMB = '1047a';
+      let charts = {};
+      let allRows = [];
 
-    let dayChartInstance = null;
-    let intentChartInstance = null;
-    let sr1047aChartInstance = null;
-    let insightsOutcomeChartInstance = null;
-    let insightsAuthByDayChartInstance = null;
+      function hideError() { loadError.textContent = ''; }
+      function showError(msg) { loadError.textContent = msg; }
 
-    function getBreadcrumbTokens(breadcrumbStr) {
-      if (!breadcrumbStr) return [];
-      return String(breadcrumbStr).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-    }
-
-    function hasBreadcrumb(breadcrumbStr, code) {
-      const tokens = getBreadcrumbTokens(breadcrumbStr);
-      const want = code.toLowerCase();
-      return tokens.some(t => t === want);
-    }
-
-    function getFirstIntentFromBreadcrumb(breadcrumbStr) {
-      const tokens = getBreadcrumbTokens(breadcrumbStr);
-      for (const { code, name } of INTENT_BREADCRUMBS) {
-        if (tokens.includes(code.toLowerCase())) return name;
-      }
-      return null;
-    }
-
-    function showError(msg) {
-      const el = document.getElementById('error');
-      el.textContent = msg;
-      el.classList.remove('hidden');
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('dashboard').classList.add('hidden');
-    }
-
-    function hideError() {
-      document.getElementById('error').classList.add('hidden');
-    }
-
-    function getDayOfWeek(dateStr) {
-      if (!dateStr) return -1;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return -1;
-      return d.getDay();
-    }
-
-    function getDayFromUniqueCallId(uniqueCallId) {
-      if (!uniqueCallId) return -1;
-      const match = String(uniqueCallId).match(/\d+-(\d+)/);
-      if (!match) return -1;
-      const ts = parseInt(match[1], 10);
-      if (ts < 1e9 || ts > 2e9) return -1;
-      return new Date(ts * 1000).getDay();
-    }
-
-    function getDateKeyFromUniqueCallId(uniqueCallId) {
-      if (!uniqueCallId) return null;
-      const match = String(uniqueCallId).match(/\d+-(\d+)/);
-      if (!match) return null;
-      const ts = parseInt(match[1], 10);
-      if (ts < 1e9 || ts > 2e9) return null;
-      const d = new Date(ts * 1000);
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
-
-    function getWeekdayCountsForMonth(year, month1Based) {
-      const daysInMonth = new Date(year, month1Based, 0).getDate();
-      const counts = Array(7).fill(0);
-      for (let day = 1; day <= daysInMonth; day++) {
-        const d = new Date(year, month1Based - 1, day);
-        counts[d.getDay()]++;
-      }
-      return counts;
-    }
-
-    const JANUARY_2026_WEEKDAYS = [4, 4, 4, 4, 5, 5, 5];
-
-    function parseCSV(text) {
-      return new Promise((resolve, reject) => {
-        Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (r) => resolve(r.data),
-          error: (e) => reject(e)
+      function parseCSV(file) {
+        return new Promise((resolve, reject) => {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false,
+            complete: function (res) {
+              if (res.errors.length && !res.data.length) reject(new Error(res.errors[0].message || 'Parse error'));
+              else resolve(res.data);
+            }
+          });
         });
-      });
-    }
-
-    function normalizeOutcome(val) {
-      return (val || '').toString().toLowerCase().trim();
-    }
-
-    function isSupervisorRequested(endStateStr) {
-      return (endStateStr || '').toString().toLowerCase().includes('supervisor requested');
-    }
-
-    function isAfterHours(endStateStr) {
-      return (endStateStr || '').toString().toLowerCase().includes('after hours');
-    }
-
-    function buildMetrics(rows) {
-      const keys = rows.length ? Object.keys(rows[0]) : [];
-      const outcomeKey = keys.find(k => /^outcome$/i.test(k)) || keys.find(k => /outcome|disposition|result|status/i.test(k)) || keys[0];
-      const intentKey = keys.find(k => /^intent$/i.test(k)) || keys.find(k => /endstate|end state/i.test(k)) || keys.find(k => /intent|reason|purpose/i.test(k)) || keys[1];
-      const dateKey = keys.find(k => /date|time|datetime/i.test(k) && !/datetimeet|vasec|xfersec/i.test(k)) || null;
-      const uniqueCallIdKey = keys.find(k => /uniquecallid|unique call id/i.test(k)) || keys[0];
-      const breadcrumbKey = keys.find(k => /^breadcrumb$/i.test(k)) || keys.find(k => /breadcrumb/i.test(k)) || null;
-      const endStateKey = keys.find(k => /^endstate$/i.test(k)) || keys.find(k => /end state|endstate/i.test(k)) || null;
-      const employerKey = keys.find(k => /employer/i.test(k)) || null;
-
-      let total = 0;
-      let finish = 0;
-      let finishTransfer = 0;
-      let bizruleTransfer = 0;
-      let authenticated = 0;
-      let supervisorRequestedTotal = 0;
-      let supervisorRequestedAuth = 0;
-      let supervisorRequestedNonAuth = 0;
-      const byDay = Array(7).fill(0);
-      const byIntent = {};
-      const byIntentAuthenticated = {};
-      const byIntent1047a = { 'No intent captured': 0 };
-      const byOutcomeEndState = { finish: {}, finishxfer: {}, bizrulexfer: {} };
-      const byOutcome = {};
-      const byEmployer = {};
-      const byEndStateAll = {};
-      const authByDay = Array(7).fill(0);
-      let afterHoursTotal = 0;
-      const byOutcomeAfterHours = {};
-      const byEndStateAfterHours = {};
-      const uniqueDays = new Set();
-
-      for (const { name } of INTENT_BREADCRUMBS) {
-        byIntentAuthenticated[name] = 0;
-        byIntent1047a[name] = 0;
       }
 
-      for (const row of rows) {
-        const outcome = normalizeOutcome(row[outcomeKey]);
-        const intent = (row[intentKey] || '(blank)').toString().trim() || '(blank)';
-        const dateVal = dateKey ? row[dateKey] : null;
-        const uniqueCallId = row[uniqueCallIdKey];
-        const breadcrumb = breadcrumbKey ? row[breadcrumbKey] : '';
-        const endStateRaw = endStateKey ? row[endStateKey] : '';
-        const endStateLabel = (endStateRaw || '(blank)').toString().trim() || '(blank)';
-
-        total++;
-        byOutcome[outcome] = (byOutcome[outcome] || 0) + 1;
-        if (outcome === 'finish') finish++;
-        if (outcome === 'finishxfer') finishTransfer++;
-        if (outcome === 'bizrulexfer') bizruleTransfer++;
-
-        const employer = (employerKey ? (row[employerKey] || '').toString().trim() : '') || '(blank)';
-        if (employer) byEmployer[employer] = (byEmployer[employer] || 0) + 1;
-        byEndStateAll[endStateLabel] = (byEndStateAll[endStateLabel] || 0) + 1;
-
-        if (isAfterHours(endStateRaw)) {
-          afterHoursTotal++;
-          byOutcomeAfterHours[outcome] = (byOutcomeAfterHours[outcome] || 0) + 1;
-          byEndStateAfterHours[endStateLabel] = (byEndStateAfterHours[endStateLabel] || 0) + 1;
-        }
-
-        if (outcome === 'finish' || outcome === 'finishxfer' || outcome === 'bizrulexfer') {
-          const map = byOutcomeEndState[outcome];
-          map[endStateLabel] = (map[endStateLabel] || 0) + 1;
-        }
-
-        const isAuth = hasBreadcrumb(breadcrumb, AUTH_BREADCRUMB);
-        if (isAuth) authenticated++;
-
-        const isSR = isSupervisorRequested(endStateRaw);
-        if (isSR) {
-          supervisorRequestedTotal++;
-          if (isAuth) supervisorRequestedAuth++;
-          else supervisorRequestedNonAuth++;
-          if (hasBreadcrumb(breadcrumb, SR_1047A_BREADCRUMB)) {
-            const intentName = getFirstIntentFromBreadcrumb(breadcrumb);
-            if (intentName) byIntent1047a[intentName]++;
-            else byIntent1047a['No intent captured']++;
-          }
-        }
-
-        let day = getDayOfWeek(dateVal);
-        if (day < 0 && uniqueCallId) day = getDayFromUniqueCallId(uniqueCallId);
-        if (day >= 0) {
-          byDay[day]++;
-          if (isAuth) authByDay[day]++;
-        }
-
-        const dateKeyStr = dateVal && !/^\d{1,2}:\d{2}/.test(String(dateVal).trim()) ? (() => { const d = new Date(dateVal); return isNaN(d.getTime()) ? null : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })() : null;
-        const uniqueDate = dateKeyStr || (uniqueCallId ? getDateKeyFromUniqueCallId(uniqueCallId) : null);
-        if (uniqueDate) uniqueDays.add(uniqueDate);
-
-        byIntent[intent] = (byIntent[intent] || 0) + 1;
-
-        if (isAuth) {
-          const intentName = getFirstIntentFromBreadcrumb(breadcrumb);
-          if (intentName) byIntentAuthenticated[intentName]++;
-        }
-      }
-
-      let distinctDayCount = uniqueDays.size || 1;
-      let distinctDatesByDay = Array(7).fill(0);
-      const yearMonths = new Set();
-      for (const dateStr of uniqueDays) {
-        const parts = String(dateStr).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-        if (parts) {
-          yearMonths.add(parts[1] + '-' + parts[2]);
-          const d = new Date(parseInt(parts[1], 10), parseInt(parts[2], 10) - 1, parseInt(parts[3], 10));
-          if (!isNaN(d.getTime())) distinctDatesByDay[d.getDay()]++;
-        }
-      }
-      if (yearMonths.has('2026-01')) {
-        distinctDatesByDay = JANUARY_2026_WEEKDAYS.slice();
-        distinctDayCount = 31;
-      } else if (yearMonths.size === 1) {
-        const [ym] = yearMonths;
-        const [y, m] = ym.split('-').map(Number);
-        const daysInMonth = new Date(y, m, 0).getDate();
-        distinctDatesByDay = getWeekdayCountsForMonth(y, m);
-        distinctDayCount = daysInMonth;
-      }
-      const avgCallsByDay = distinctDatesByDay.map((n, i) => (n > 0 ? byDay[i] / n : 0));
-
-      return {
-        total,
-        finish,
-        finishTransfer,
-        bizruleTransfer,
-        authenticated,
-        supervisorRequestedTotal,
-        supervisorRequestedAuth,
-        supervisorRequestedNonAuth,
-        byDay,
-        distinctDayCount,
-        distinctDatesByDay,
-        avgCallsByDay,
-        byIntent,
-        byIntentAuthenticated,
-        byIntent1047a,
-        byOutcomeEndState,
-        byOutcome,
-        byEmployer,
-        byEndStateAll,
-        authByDay,
-        afterHoursTotal,
-        byOutcomeAfterHours,
-        byEndStateAfterHours
+      const INTENT_BREADCRUMBS = {
+        'WisMO': '1011c',
+        'Returns': '1011b',
+        'Password reset': '1011d',
+        'Account balance': '1024a',
+        'Spending limit': '1024b',
+        'Changing contact info': '1011f'
       };
-    }
+      const INTENT_BREADCRUMBS_FOR_1047A = [
+        { label: 'Returns (1045a)', code: '1045a' },
+        { label: 'WisMO (1045c)', code: '1045c' },
+        { label: 'Password Reset (1045d)', code: '1045d' },
+        { label: 'Account Balance (1024a)', code: '1024a' },
+        { label: 'Change Contact Information (1024b)', code: '1024b' }
+      ];
+      const AUTH_BREADCRUMB = '1005a';
+      const BREADCRUMB_1047A = '1047a';
+      const WISMO_ENTRY_BREADCRUMB = '1011c';
+      const WISMO_PATH_GROUPS = [
+        { name: 'Order Selection', codes: ['1018a', '1059a', '1059b', '1059c', '1059d'] },
+        { name: 'Order Status', codes: ['1015b', '1015c', '1015f', '1015h', '1020b'] },
+        { name: 'Order Tracked', codes: ['1015e', '1061a', '1061b'] },
+        { name: 'Order Placed', codes: ['1015g'] },
+        { name: 'Order Details', codes: ['1060a', '1060b'] },
+        { name: 'No Order Selected', codes: ['1020a', '1021a'] },
+        { name: 'Hot Word / Exit', codes: ['1021b'] },
+        { name: 'Other / No Order Found', codes: ['1015a', '1015i'] },
+        { name: 'Summary', codes: ['1017a', '1017b'] },
+        { name: 'Other Path', codes: ['1015d'] }
+      ];
+      const WISMO_PATH_CODES_SET = new Set(WISMO_PATH_GROUPS.flatMap(g => g.codes));
 
-    function renderEndStateTable(entries, outcomeTotal, total, wrapId) {
-      const rows = entries
-        .sort((a, b) => b[1] - a[1])
-        .map(([label, count]) => {
-          const pctOfOutcome = outcomeTotal ? ((count / outcomeTotal) * 100).toFixed(1) : '0';
-          const pctOfTotal = total ? ((count / total) * 100).toFixed(1) : '0';
-          const short = label.length > 45 ? label.slice(0, 42) + '…' : label;
-          return `<tr><td title="${escapeHtml(label)}">${escapeHtml(short)}</td><td>${count.toLocaleString()}</td><td>${pctOfOutcome}%</td><td>${pctOfTotal}%</td></tr>`;
-        }).join('');
-      const el = document.getElementById(wrapId);
-      if (!el) return;
-      el.innerHTML = outcomeTotal
-        ? `<table><thead><tr><th>End state</th><th>Count</th><th>% of outcome</th><th>% of total</th></tr></thead><tbody>${rows}</tbody></table>`
-        : '<p class="loading">No calls.</p>';
-    }
-    function escapeHtml(s) {
-      const div = document.createElement('div');
-      div.textContent = s;
-      return div.innerHTML;
-    }
-
-    function renderDashboard(metrics) {
-      const { total, finish, finishTransfer, bizruleTransfer, authenticated, supervisorRequestedTotal, supervisorRequestedAuth, supervisorRequestedNonAuth, byDay, distinctDayCount, distinctDatesByDay, avgCallsByDay, byIntentAuthenticated, byIntent1047a, byOutcomeEndState, byOutcome, byEmployer, byEndStateAll, authByDay } = metrics;
-      const combined = finish + finishTransfer;
-      const authPieTotal = Object.values(byIntentAuthenticated).reduce((a, b) => a + b, 0);
-
-      document.getElementById('totalCalls').textContent = total.toLocaleString();
-      document.getElementById('finishCount').textContent = finish.toLocaleString();
-      document.getElementById('finishPct').textContent = total ? ((finish / total) * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('finishTransferCount').textContent = finishTransfer.toLocaleString();
-      document.getElementById('finishTransferPct').textContent = total ? ((finishTransfer / total) * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('bizruleTransferCount').textContent = bizruleTransfer.toLocaleString();
-      document.getElementById('bizruleTransferPct').textContent = total ? ((bizruleTransfer / total) * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('combinedCount').textContent = combined.toLocaleString();
-      document.getElementById('combinedPct').textContent = total ? ((combined / total) * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('authCount').textContent = authenticated.toLocaleString();
-      document.getElementById('authPct').textContent = total ? ((authenticated / total) * 100).toFixed(1) + '%' : '0%';
-      document.getElementById('srTotal').textContent = supervisorRequestedTotal.toLocaleString();
-      document.getElementById('srAuth').textContent = supervisorRequestedAuth.toLocaleString();
-      document.getElementById('srNonAuth').textContent = supervisorRequestedNonAuth.toLocaleString();
-
-      renderEndStateTable(Object.entries(byOutcomeEndState.finish || {}).sort((a, b) => b[1] - a[1]).slice(0, 10), finish, total, 'endStateFinishWrap');
-      renderEndStateTable(Object.entries(byOutcomeEndState.finishxfer || {}).sort((a, b) => b[1] - a[1]).slice(0, 10), finishTransfer, total, 'endStateFinishXferWrap');
-      renderEndStateTable(Object.entries(byOutcomeEndState.bizrulexfer || {}).sort((a, b) => b[1] - a[1]).slice(0, 10), bizruleTransfer, total, 'endStateBizruleXferWrap');
-
-      const dayAvgEl = document.getElementById('dayAvgWrap');
-      if (dayAvgEl) {
-        dayAvgEl.textContent = distinctDayCount > 0
-          ? 'Average calls per day = (calls for that weekday) ÷ (number of that weekday in the period). Example: 900 Sunday calls ÷ 3 Sundays = 300 avg.'
-          : '';
+      function getBreadcrumbParts(r) {
+        return (r.Breadcrumb || '').split(',').map(s => s.trim()).filter(Boolean);
       }
 
-      const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const dayData = DAYS.map((_, i) => ({
-        day: dayLabels[i],
-        full: DAYS[i],
-        count: byDay[i],
-        numDays: distinctDatesByDay[i] || 0,
-        avg: avgCallsByDay[i] || 0
-      }));
+      function getRowDate(r) {
+        const dt = (r.DateTimeET || '').trim();
+        return dt ? dt.split(' ')[0] : '';
+      }
 
-      const dayCtx = document.getElementById('dayChart').getContext('2d');
-      if (dayChartInstance) dayChartInstance.destroy();
-      dayChartInstance = new Chart(dayCtx, {
-        type: 'bar',
-        data: {
-          labels: dayLabels,
-          datasets: [{
-            label: 'Calls',
-            data: byDay,
-            backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            borderColor: 'rgb(59, 130, 246)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#94a3b8' } },
-            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-          }
-        }
-      });
+      function filterRowsByDateRange(rows, fromVal, toVal) {
+        if (!fromVal && !toVal) return rows;
+        return rows.filter(r => {
+          const d = getRowDate(r);
+          if (!d) return false;
+          if (fromVal && d < fromVal) return false;
+          if (toVal && d > toVal) return false;
+          return true;
+        });
+      }
 
-      const tableRows = dayData.map(({ full, count, numDays, avg }) => {
-        const avgStr = numDays > 0 ? Math.round(avg).toLocaleString() : '—';
-        return `<tr><td>${full}</td><td>${count.toLocaleString()}</td><td>${numDays}</td><td>${avgStr}</td></tr>`;
-      }).join('');
-      document.getElementById('dayTableWrap').innerHTML = total
-        ? `<table><thead><tr><th>Day</th><th>Calls</th><th># of days</th><th>Avg/day</th></tr></thead><tbody>${tableRows}</tbody></table>`
-        : '';
+      function applyDateRange() {
+        if (!allRows.length) return;
+        const fromVal = dateFrom.value || '';
+        const toVal = dateTo.value || '';
+        const filtered = filterRowsByDateRange(allRows, fromVal, toVal);
+        const agg = aggregate(filtered);
+        renderKPIs(agg);
+        renderCharts(agg);
+      }
 
-      const intentEntries = Object.entries(byIntentAuthenticated)
-        .filter(([, v]) => v > 0)
-        .sort((a, b) => b[1] - a[1]);
-      const colors = [
-        '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'
-      ];
-      const intentCtx = document.getElementById('intentChart').getContext('2d');
-      if (intentChartInstance) intentChartInstance.destroy();
-      intentChartInstance = new Chart(intentCtx, {
-        type: 'pie',
-        data: {
-          labels: intentEntries.map(([k]) => k),
-          datasets: [{
-            data: intentEntries.map(([, v]) => v),
-            backgroundColor: intentEntries.map((_, i) => colors[i % colors.length]),
-            borderWidth: 1,
-            borderColor: 'var(--card)'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'right', labels: { color: '#f1f5f9', padding: 10 } },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const pct = authPieTotal ? ((ctx.raw / authPieTotal) * 100).toFixed(1) : 0;
-                  return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
-                }
-              }
+      const OUTCOME_ENDSTATE_KEYS = ['finish', 'finishXfer', 'bizruleXfer'];
+
+      function aggregate(rows) {
+        const byOutcome = {};
+        const byEndState = {};
+        const byOutcomeAndEndState = { finish: {}, finishXfer: {}, bizruleXfer: {} };
+        const byDate = {};
+        const byEmployer = {};
+        const byCallCenter = {};
+        const vaDurations = [];
+        let withTransfer = 0;
+        let totalXferSec = 0;
+        let authenticatedCount = 0;
+        const byIntent = { 'WisMO': 0, 'Returns': 0, 'Password reset': 0, 'Account balance': 0, 'Spending limit': 0, 'Changing contact info': 0 };
+        const by1047aAndIntent = {};
+        INTENT_BREADCRUMBS_FOR_1047A.forEach(({ label }) => { by1047aAndIntent[label] = 0; });
+        let wismoEnteredCount = 0;
+        const byWismoPath = {};
+        const byWismoPathGroup = {};
+        WISMO_PATH_GROUPS.forEach(g => { byWismoPathGroup[g.name] = 0; });
+
+        rows.forEach(r => {
+          const outcome = (r.Outcome || '').trim() || 'Unknown';
+          byOutcome[outcome] = (byOutcome[outcome] || 0) + 1;
+
+          const endState = (r.EndState || '').trim();
+          if (endState && endState !== '(none)' && endState.toLowerCase() !== 'none') {
+            byEndState[endState] = (byEndState[endState] || 0) + 1;
+            if (byOutcomeAndEndState[outcome]) {
+              byOutcomeAndEndState[outcome][endState] = (byOutcomeAndEndState[outcome][endState] || 0) + 1;
             }
           }
-        }
-      });
 
-      const sr1047aEntries = Object.entries(byIntent1047a)
-        .filter(([, v]) => v > 0)
-        .sort((a, b) => b[1] - a[1]);
-      const sr1047aTotal = sr1047aEntries.reduce((a, [, v]) => a + v, 0);
-      const tableRows1047a = sr1047aEntries.map(([name, count]) => {
-        const pct = sr1047aTotal ? ((count / sr1047aTotal) * 100).toFixed(1) : '0';
-        return `<tr><td>${name}</td><td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
-      }).join('');
-      document.getElementById('sr1047aTableWrap').innerHTML = sr1047aTotal
-        ? `<table><thead><tr><th>Intent</th><th>Count</th><th>%</th></tr></thead><tbody>${tableRows1047a}</tbody></table>`
-        : '<p class="loading">No Supervisor Requested calls with breadcrumb 1047a.</p>';
+          const dt = (r.DateTimeET || '').trim();
+          const date = dt ? dt.split(' ')[0] : '';
+          if (date) byDate[date] = (byDate[date] || 0) + 1;
 
-      const colors1047a = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#64748b'];
-      const sr1047aCtx = document.getElementById('sr1047aChart').getContext('2d');
-      if (sr1047aChartInstance) sr1047aChartInstance.destroy();
-      if (sr1047aTotal > 0 && sr1047aEntries.length > 0) {
-        sr1047aChartInstance = new Chart(sr1047aCtx, {
-          type: 'pie',
-          data: {
-            labels: sr1047aEntries.map(([k]) => k),
-            datasets: [{
-              data: sr1047aEntries.map(([, v]) => v),
-              backgroundColor: sr1047aEntries.map((_, i) => colors1047a[i % colors1047a.length]),
-              borderWidth: 1,
-              borderColor: 'var(--card)'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'right', labels: { color: '#f1f5f9', padding: 8 } },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => {
-                    const pct = sr1047aTotal ? ((ctx.raw / sr1047aTotal) * 100).toFixed(1) : 0;
-                    return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
-                  }
-                }
-              }
-            }
+          const emp = (r.EmployerName || '').trim();
+          if (emp && emp !== '(none)' && emp.toLowerCase() !== 'none') byEmployer[emp] = (byEmployer[emp] || 0) + 1;
+
+          const cc = (r.CallCenter || '').trim() || '(none)';
+          byCallCenter[cc] = (byCallCenter[cc] || 0) + 1;
+
+          const vaMin = parseInt(r.VAmin, 10) || 0;
+          const vaSec = parseInt(r.VAsec, 10) || 0;
+          vaDurations.push(vaMin + vaSec / 60);
+
+          const xferSec = parseInt(r.Xfersec, 10) || 0;
+          if (xferSec > 0) { withTransfer++; totalXferSec += xferSec; }
+
+          const parts = getBreadcrumbParts(r);
+          if (parts.includes(AUTH_BREADCRUMB)) authenticatedCount++;
+          Object.entries(INTENT_BREADCRUMBS).forEach(([label, code]) => {
+            if (parts.includes(code)) byIntent[label]++;
+          });
+          if (parts.includes(BREADCRUMB_1047A)) {
+            INTENT_BREADCRUMBS_FOR_1047A.forEach(({ label, code }) => {
+              if (parts.includes(code)) by1047aAndIntent[label]++;
+            });
+          }
+          if (parts.includes(WISMO_ENTRY_BREADCRUMB)) {
+            wismoEnteredCount++;
+            parts.forEach(code => {
+              if (code === WISMO_ENTRY_BREADCRUMB) return;
+              if (WISMO_PATH_CODES_SET.has(code)) byWismoPath[code] = (byWismoPath[code] || 0) + 1;
+            });
+            WISMO_PATH_GROUPS.forEach(g => {
+              if (g.codes.some(c => parts.includes(c))) byWismoPathGroup[g.name]++;
+            });
           }
         });
-      } else {
-        sr1047aChartInstance = null;
+
+        return {
+          total: rows.length,
+          authenticatedCount,
+          byIntent,
+          by1047aAndIntent,
+          wismoEnteredCount,
+          byWismoPath,
+          byWismoPathGroup,
+          byOutcome,
+          byEndState,
+          byOutcomeAndEndState,
+          byDate,
+          byEmployer,
+          byCallCenter,
+          vaDurations,
+          withTransfer,
+          totalXferSec
+        };
       }
 
-      renderInsights(metrics);
+      function renderKPIs(agg) {
+        const finish = agg.byOutcome.finish || 0;
+        const finishXfer = agg.byOutcome.finishXfer || 0;
+        const bizruleXfer = agg.byOutcome.bizruleXfer || 0;
+        const agentRequests = (agg.byOutcome.callerXfer1 || 0) + (agg.byOutcome.callerXfer2 || 0);
+        const total = agg.total;
+        const authenticated = agg.authenticatedCount || 0;
+        const nonAuthenticated = total - authenticated;
 
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('dashboard').classList.remove('hidden');
-    }
+        kpiGrid.innerHTML = `
+          <div class="kpi-card"><div class="label">Total calls</div><div class="value">${total.toLocaleString()}</div></div>
+          <div class="kpi-card"><div class="label">Finish calls</div><div class="value">${finish.toLocaleString()}</div><div class="sub">${total ? (100 * finish / total).toFixed(1) : 0}%</div></div>
+          <div class="kpi-card"><div class="label">Finish transfers</div><div class="value">${finishXfer.toLocaleString()}</div><div class="sub">${total ? (100 * finishXfer / total).toFixed(1) : 0}%</div></div>
+          <div class="kpi-card"><div class="label">Bizrule transfers</div><div class="value">${bizruleXfer.toLocaleString()}</div><div class="sub">${total ? (100 * bizruleXfer / total).toFixed(1) : 0}%</div></div>
+          <div class="kpi-card"><div class="label">Agent requests</div><div class="value">${agentRequests.toLocaleString()}</div><div class="sub">${total ? (100 * agentRequests / total).toFixed(1) : 0}%</div></div>
+        `;
+        const authKpiGrid = document.getElementById('authKpiGrid');
+        if (authKpiGrid) {
+          authKpiGrid.innerHTML = `
+            <div class="kpi-card"><div class="label">Authenticated (1005a)</div><div class="value">${authenticated.toLocaleString()}</div><div class="sub">${total ? (100 * authenticated / total).toFixed(1) : 0}%</div></div>
+            <div class="kpi-card"><div class="label">Non-authenticated</div><div class="value">${nonAuthenticated.toLocaleString()}</div><div class="sub">${total ? (100 * nonAuthenticated / total).toFixed(1) : 0}%</div></div>
+          `;
+        }
+      }
 
-    function renderInsights(metrics) {
-      const { total, authenticated, byOutcome, byEmployer, byEndStateAll, authByDay, byDay, afterHoursTotal, byOutcomeAfterHours, byEndStateAfterHours } = metrics;
-      const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      function sortObj(obj, limit) {
+        return Object.entries(obj)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, limit || 999);
+      }
 
-      const outcomeEntries = Object.entries(byOutcome || {}).sort((a, b) => b[1] - a[1]);
-      const outcomeColors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#64748b'];
-      if (insightsOutcomeChartInstance) insightsOutcomeChartInstance.destroy();
-      if (outcomeEntries.length > 0) {
-        const ctx = document.getElementById('insightsOutcomeChart').getContext('2d');
-        insightsOutcomeChartInstance = new Chart(ctx, {
-          type: 'pie',
+      const colorPalette = ['#3b82f6', '#22c55e', '#eab308', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#6366f1', '#14b8a6'];
+
+      function destroyCharts() {
+        Object.values(charts).forEach(c => c && c.destroy());
+        charts = {};
+      }
+
+      function renderCharts(agg) {
+        destroyCharts();
+
+        const outcomeEntries = sortObj(agg.byOutcome);
+        const ctxOutcome = document.getElementById('chartOutcome').getContext('2d');
+        charts.outcome = new Chart(ctxOutcome, {
+          type: 'doughnut',
           data: {
             labels: outcomeEntries.map(([k]) => k),
-            datasets: [{
-              data: outcomeEntries.map(([, v]) => v),
-              backgroundColor: outcomeEntries.map((_, i) => outcomeColors[i % outcomeColors.length]),
-              borderWidth: 1,
-              borderColor: 'var(--card)'
-            }]
+            datasets: [{ data: outcomeEntries.map(([, v]) => v), backgroundColor: colorPalette }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+
+        const dateEntries = Object.entries(agg.byDate).sort((a, b) => a[0].localeCompare(b[0]));
+        const ctxDate = document.getElementById('chartByDate').getContext('2d');
+        charts.date = new Chart(ctxDate, {
+          type: 'line',
+          data: {
+            labels: dateEntries.map(([d]) => d),
+            datasets: [{ label: 'Calls', data: dateEntries.map(([, v]) => v), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.2 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        const endStateColors = { finish: '#22c55e', finishXfer: '#3b82f6', bizruleXfer: '#8b5cf6' };
+        OUTCOME_ENDSTATE_KEYS.forEach(outcomeKey => {
+          const entries = sortObj(agg.byOutcomeAndEndState[outcomeKey] || {}, 10);
+          const ctx = document.getElementById('chartEndState' + (outcomeKey === 'finish' ? 'Finish' : outcomeKey === 'finishXfer' ? 'FinishXfer' : 'BizruleXfer')).getContext('2d');
+          charts['endState' + outcomeKey] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: entries.map(([k]) => k.length > 30 ? k.slice(0, 27) + '…' : k),
+              datasets: [{ label: 'Calls', data: entries.map(([, v]) => v), backgroundColor: endStateColors[outcomeKey] }]
+            },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } }
+          });
+        });
+
+        const intentLabels = Object.keys(agg.byIntent);
+        const intentData = intentLabels.map(k => agg.byIntent[k]);
+        const totalCalls = agg.total;
+        const ctxIntent = document.getElementById('chartIntent').getContext('2d');
+        charts.intent = new Chart(ctxIntent, {
+          type: 'pie',
+          data: {
+            labels: intentLabels,
+            datasets: [{ data: intentData, backgroundColor: colorPalette }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { position: 'right', labels: { color: '#f1f5f9', padding: 8 } },
+              legend: { position: 'right' },
               tooltip: {
                 callbacks: {
-                  label: (ctx) => {
-                    const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
-                    return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
+                  label: function (ctx) {
+                    const v = ctx.raw;
+                    const pct = totalCalls ? (100 * v / totalCalls).toFixed(1) : 0;
+                    return ctx.label + ': ' + v.toLocaleString() + ' (' + pct + '%)';
                   }
                 }
               }
             }
           }
         });
+
+        const buckets = [0, 1, 2, 3, 5, 10, 20, 999];
+        const hist = buckets.slice(0, -1).map((_, i) => agg.vaDurations.filter(m => m >= buckets[i] && m < buckets[i + 1]).length);
+        const labels = buckets.slice(0, -1).map((b, i) => b + '–' + (buckets[i + 1] === 999 ? '+' : buckets[i + 1]) + ' min');
+        const ctxDur = document.getElementById('chartDuration').getContext('2d');
+        charts.duration = new Chart(ctxDur, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{ label: 'Calls', data: hist, backgroundColor: '#8b5cf6' }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        const overlapEl = document.getElementById('overlap1047aGrid');
+        if (overlapEl && agg.by1047aAndIntent) {
+          overlapEl.innerHTML = INTENT_BREADCRUMBS_FOR_1047A.map(({ label }) =>
+            '<div class="overlap-1047a-card"><div class="label">1047a + ' + label + '</div><div class="value">' + (agg.by1047aAndIntent[label] || 0).toLocaleString() + '</div></div>'
+          ).join('');
+        }
+
+        const wismoSummaryEl = document.getElementById('wismoSummary');
+        const wismoTableWrap = document.getElementById('wismoPathTableWrap');
+        if (wismoSummaryEl && wismoTableWrap) {
+          const entered = agg.wismoEnteredCount || 0;
+          const total = agg.total || 1;
+          wismoSummaryEl.innerHTML = '<div class="kpi-card"><div class="label">Calls that entered WisMO (1011c)</div><div class="value">' + entered.toLocaleString() + '</div><div class="sub">' + (total ? (100 * entered / total).toFixed(1) : 0) + '% of all calls</div></div>';
+          const groupEntries = WISMO_PATH_GROUPS.map(g => ({
+            name: g.name,
+            codesLabel: g.codes.join(', '),
+            count: agg.byWismoPathGroup[g.name] || 0
+          })).filter(e => e.count > 0).sort((a, b) => b.count - a.count);
+          wismoTableWrap.innerHTML = groupEntries.length
+            ? '<p style="margin:0 0 0.5rem; font-size:0.85rem; color:var(--text-muted);">Paths reached within WisMO — unique calls per path (a call is counted once per path if it hit any breadcrumb in that path)</p><table class="wismo-path-table"><thead><tr><th>Path (breadcrumbs)</th><th>Calls</th></tr></thead><tbody>' +
+              groupEntries.map(e => '<tr><td>' + e.name + ' (' + e.codesLabel + ')</td><td>' + e.count.toLocaleString() + '</td></tr>').join('') +
+              '</tbody></table>'
+            : '<p style="font-size:0.9rem; color:var(--text-muted);">No WisMO path data for this range.</p>';
+        }
+
+        const empEntries = sortObj(agg.byEmployer, 10);
+        const ctxEmp = document.getElementById('chartEmployer').getContext('2d');
+        charts.employer = new Chart(ctxEmp, {
+          type: 'bar',
+          data: {
+            labels: empEntries.map(([k]) => k.length > 30 ? k.slice(0, 27) + '…' : k),
+            datasets: [{ label: 'Calls', data: empEntries.map(([, v]) => v), backgroundColor: '#22c55e' }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } }
+        });
       }
 
-      const authRateByDay = byDay.map((c, i) => c > 0 ? ((authByDay[i] / c) * 100) : 0);
-      if (insightsAuthByDayChartInstance) insightsAuthByDayChartInstance.destroy();
-      const ctxAuth = document.getElementById('insightsAuthByDayChart').getContext('2d');
-      insightsAuthByDayChartInstance = new Chart(ctxAuth, {
-        type: 'bar',
-        data: {
-          labels: dayLabels,
-          datasets: [{
-            label: 'Auth rate %',
-            data: authRateByDay,
-            backgroundColor: 'rgba(34, 197, 94, 0.7)',
-            borderColor: 'rgb(34, 197, 94)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#94a3b8', callback: v => v + '%' } },
-            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-          }
-        }
+      csvFile.addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        hideError();
+        fileName.textContent = file.name;
+        emptyState.querySelector('p').textContent = 'Loading…';
+        emptyState.classList.add('loading');
+        parseCSV(file)
+          .then(rows => {
+            if (!rows.length) throw new Error('CSV has no data rows.');
+            allRows = rows;
+            const dates = rows.map(getRowDate).filter(Boolean);
+            const minDate = dates.length ? dates.reduce((a, b) => (a < b ? a : b)) : '';
+            const maxDate = dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : '';
+            dateFrom.value = minDate;
+            dateTo.value = maxDate;
+            dateFrom.min = minDate;
+            dateFrom.max = maxDate;
+            dateTo.min = minDate;
+            dateTo.max = maxDate;
+            emptyState.style.display = 'none';
+            dashboard.style.display = 'block';
+            applyDateRange();
+          })
+          .catch(err => {
+            emptyState.classList.remove('loading');
+            emptyState.querySelector('p').textContent = 'Load a CSV file to view the dashboard.';
+            showError(err.message || 'Failed to load CSV.');
+          });
       });
 
-      const employerEntries = Object.entries(byEmployer || {}).filter(([k]) => k !== '(blank)').sort((a, b) => b[1] - a[1]).slice(0, 15);
-      const employerRows = employerEntries.map(([name, count]) => {
-        const pct = total ? ((count / total) * 100).toFixed(1) : '0';
-        const short = name.length > 40 ? name.slice(0, 37) + '…' : name;
-        return `<tr><td title="${escapeHtml(name)}">${escapeHtml(short)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
-      }).join('');
-      document.getElementById('insightsEmployerWrap').innerHTML = employerEntries.length > 0
-        ? `<table><thead><tr><th>Employer</th><th>Calls</th><th>%</th></tr></thead><tbody>${employerRows}</tbody></table>`
-        : '<p class="loading">No employer data.</p>';
-
-      const endStateEntries = Object.entries(byEndStateAll || {}).filter(([k]) => k !== '(blank)').sort((a, b) => b[1] - a[1]).slice(0, 15);
-      const endStateRows = endStateEntries.map(([name, count]) => {
-        const pct = total ? ((count / total) * 100).toFixed(1) : '0';
-        const short = name.length > 50 ? name.slice(0, 47) + '…' : name;
-        return `<tr><td title="${escapeHtml(name)}">${escapeHtml(short)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
-      }).join('');
-      document.getElementById('insightsEndStateWrap').innerHTML = endStateEntries.length > 0
-        ? `<table><thead><tr><th>End state</th><th>Calls</th><th>%</th></tr></thead><tbody>${endStateRows}</tbody></table>`
-        : '<p class="loading">No end state data.</p>';
-
-      const ahPct = total && afterHoursTotal != null ? ((afterHoursTotal / total) * 100).toFixed(1) : '0';
-      const ahCountEl = document.getElementById('insightsAfterHoursCount');
-      const ahPctEl = document.getElementById('insightsAfterHoursPct');
-      if (ahCountEl) ahCountEl.textContent = (afterHoursTotal || 0).toLocaleString();
-      if (ahPctEl) ahPctEl.textContent = ahPct + '% of total';
-
-      const ahOutcomeEntries = Object.entries(byOutcomeAfterHours || {}).sort((a, b) => b[1] - a[1]);
-      const ahOutcomeRows = ahOutcomeEntries.map(([name, count]) => {
-        const pct = afterHoursTotal ? ((count / afterHoursTotal) * 100).toFixed(1) : '0';
-        return `<tr><td>${escapeHtml(name)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
-      }).join('');
-      document.getElementById('insightsAfterHoursOutcomeWrap').innerHTML = ahOutcomeEntries.length > 0
-        ? `<table><thead><tr><th>Outcome</th><th>Count</th><th>%</th></tr></thead><tbody>${ahOutcomeRows}</tbody></table>`
-        : '<p class="loading">No after hours calls.</p>';
-
-      const ahEndStateEntries = Object.entries(byEndStateAfterHours || {}).sort((a, b) => b[1] - a[1]);
-      const ahEndStateRows = ahEndStateEntries.map(([name, count]) => {
-        const pct = afterHoursTotal ? ((count / afterHoursTotal) * 100).toFixed(1) : '0';
-        const short = name.length > 48 ? name.slice(0, 45) + '…' : name;
-        return `<tr><td title="${escapeHtml(name)}">${escapeHtml(short)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td></tr>`;
-      }).join('');
-      document.getElementById('insightsAfterHoursEndStateWrap').innerHTML = ahEndStateEntries.length > 0
-        ? `<table><thead><tr><th>End state</th><th>Count</th><th>%</th></tr></thead><tbody>${ahEndStateRows}</tbody></table>`
-        : '<p class="loading">No after hours calls.</p>';
-
-      const authRate = total ? ((authenticated / total) * 100).toFixed(1) : '0';
-      const summaryRows = [
-        ['Total calls', total.toLocaleString(), ''],
-        ['Authenticated (1005a)', authenticated.toLocaleString(), (authRate + '%')],
-        ['After hours calls', (afterHoursTotal || 0).toLocaleString(), ahPct + '%'],
-        ['Unique outcomes', (byOutcome ? Object.keys(byOutcome).length : 0), ''],
-        ['Unique employers', (byEmployer ? Object.keys(byEmployer).filter(k => k !== '(blank)').length : 0), '']
-      ].map(([label, value, extra]) => `<tr><td>${label}</td><td>${value}</td><td>${extra}</td></tr>`).join('');
-      document.getElementById('insightsSummaryWrap').innerHTML = `<table><thead><tr><th>Metric</th><th>Value</th><th></th></tr></thead><tbody>${summaryRows}</tbody></table>`;
-    }
-
-    async function run(csvText) {
-      hideError();
-      try {
-        const rows = await parseCSV(csvText);
-        if (!rows.length) {
-          showError('CSV has no data rows.');
-          return;
-        }
-        const metrics = buildMetrics(rows);
-        renderDashboard(metrics);
-      } catch (e) {
-        showError('Failed to parse CSV: ' + (e.message || String(e)));
-      }
-    }
-
-    document.getElementById('csvFile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => run(ev.target.result);
-      reader.readAsText(file);
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.getAttribute('data-tab');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        const panel = document.getElementById('tab-' + tab);
-        if (panel) panel.classList.add('active');
-      });
-    });
-
-    fetch(encodeURI(CSV_URL))
-      .then((r) => {
-        if (!r.ok) throw new Error('File not found. Use "Load CSV" to select Purchasing Power January 2026.csv');
-        return r.text();
-      })
-      .then(run)
-      .catch((e) => {
-        showError(e.message || 'Could not load CSV.');
-      });
+      dateFrom.addEventListener('change', applyDateRange);
+      dateTo.addEventListener('change', applyDateRange);
+    })();
   </script>
 </body>
 </html>

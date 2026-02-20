@@ -1,35 +1,40 @@
 # Purchasing Power Dashboard
 
-Call analytics dashboard for Purchasing Power (January 2026). Single-page HTML dashboard with **Overview** and **Additional Insights** tabs.
+A single-page dashboard for **Purchasing Power** call/IVA data from the January 2026 CSV export.
 
-## Setup
+## Quick start
 
-1. Place your data file in this folder: **`Purchasing Power January 2026.csv`**
-2. Open the dashboard:
-   - **Option A:** Double-click **`start-dashboard.bat`** to start a local server and open the dashboard in your browser.
-   - **Option B:** Open **`index.html`** in a browser; use **Load CSV** to select the file if it doesn’t load automatically.
+1. **Open the dashboard**  
+   Double-click `start-dashboard.bat` (or open `index.html` in your browser).
 
-## Overview tab
+2. **Load the data**  
+   Click **Load CSV**, then choose `Purchasing Power January 2026.csv` in this folder.
 
-- **Cards:** Total calls, Finish, Finish transfer, Bizrule transfer, Finish + Finish transfer, Authenticated (1005a), Supervisor Requested (authenticated vs non-authenticated).
-- **Calls by day of week:** Bar chart and table with avg calls per day (by weekday); uses January 2026 calendar (31 days).
-- **Caller intent (authenticated):** Pie chart of intents (WisMO, Account Balance, Spending Limit, etc.) for callers with breadcrumb 1005a.
-- **End state deep dive:** Top 10 end states for Finish, FinishXfer, and BizruleXfer (count, % of outcome, % of total).
-- **Supervisor Requested with 1047a:** Intent breakout for SR calls with breadcrumb 1047a (table + pie).
+3. **View metrics**  
+   The dashboard shows KPIs and charts for call outcomes, dates, end states, employers, call center, and VA duration.
 
-## Additional Insights tab
+## What’s on the dashboard
 
-- **All outcomes distribution** – Pie chart of every outcome type.
-- **Authentication rate by day of week** – Bar chart of % authenticated per weekday.
-- **Top employers by call volume** – Top 15 employers (table).
-- **Top end states (all calls)** – Top 15 end states (table).
-- **After hours** – Count and % of total; outcomes and end states for calls with "After hours" in end state.
-- **Summary stats** – Total calls, authenticated, after hours, unique outcomes, unique employers.
+- **KPI cards**: Total calls, finish/hangup/transfer counts and %, average and median VA duration, calls with transfer.
+- **Outcome distribution**: Pie/doughnut of outcome types (finish, hangup1/2, finishXfer, callerXfer, etc.).
+- **Calls by date**: Line chart of daily volume.
+- **Top end states**: Bar chart of the top 12 end states.
+- **Top employers**: Bar chart of the top 10 employers by call volume.
+- **Call center**: Doughnut of call center (or “none”).
+- **VA duration**: Histogram of VA time in minutes (buckets 0–1, 1–2, 2–3, 3–5, 5–10, 10–20, 20+).
 
-## CSV format
+## Files
 
-Expects a header row with columns such as: **UniqueCallId**, **Outcome**, **EndState**, **Breadcrumb**, **EmployerName**. Day of week is derived from UniqueCallId when no date column is present. Authenticated = breadcrumb contains `1005a`. Outcomes: `finish`, `finishxfer`, `bizrulexfer` (case-insensitive).
+| File | Purpose |
+|------|--------|
+| `index.html` | Dashboard UI; load any CSV with the same column names. |
+| `Purchasing Power January 2026.csv` | Call data (UniqueCallId, DateTimeET, VAsec, VAmin, Outcome, EndState, EmployerName, CallCenter, etc.). |
+| `2024.04.10 Purchasing Power Empathy Redesign FD.pdf` | Design/flow reference (not used by the dashboard). |
 
-## Tech
+## CSV columns used
 
-Vanilla HTML/CSS/JS, [Chart.js](https://www.chartjs.org/), [Papa Parse](https://www.papaparse.com/) (CDN). No build step.
+The dashboard expects at least: `DateTimeET`, `VAsec`, `VAmin`, `Xfersec`, `Outcome`, `EndState`, `EmployerName`, `CallCenter`. Other columns in the CSV are ignored for the charts.
+
+## Browser
+
+Use a modern browser (Chrome, Edge, Firefox). The dashboard uses Chart.js and PapaParse from CDNs; an internet connection is needed on first load.
